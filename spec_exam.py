@@ -30,12 +30,13 @@ if hpath == '/home/vestrada78840/': # need to change
 else:
     data_path = '../data/'
     chi_path = '../chidat/'
-    beam_path = '../beams/' # path to the beam parameter files
-    beam_2d_path = '/Volumes/Vince_CLEAR/RELEASE_v2.1.0/BEAMS/'# path to the beams
+    beam_path = '' # path to the beam parameter files
+    beam_2d_path = ''# path to the beams
     template_path = '../templates/'
     out_path = '../data/posteriors/'
     phot_path = '../phot/'
-
+    
+    
 class Gen_spec_2D(object):
     def __init__(self, field, galaxy_id, specz,
                  g102_lims=[8000, 11300], g141_lims=[11300, 16500],
@@ -92,9 +93,9 @@ class Gen_spec_2D(object):
         BMX = np.load(beam_path +'{}_{}_ex.npy'.format(self.field, self.galaxy_id),allow_pickle=True)
         clip, clipspec, omitspec = np.load(beam_path +'{}_{}.npy'.format(self.field, self.galaxy_id),allow_pickle=True)
         if hpath == '/home/vestrada78840/': 
-            fl = beam_2d_path + 'j021820m0510_{}.beams.fit'.format(gid)
+            fl = beam_2d_path + 'j021820m0510_{}.beams.fits'.format(gid)
         else:
-            fl = beam_2d_path + 'j021820m0510_{}.beams.fit'.format(gid)
+            fl = beam_2d_path + 'j021820m0510_{}.beams.fits'.format(gid)
 
         mb = multifit.MultiBeam(fl,**args)
         blist = mb.beams
