@@ -285,7 +285,8 @@ class Photometry(object):
         if filter_num != 0:
             self.filter_number = filter_num
 
-        f = open(hpath + '/eazy-photoz/filters/FILTER.RES.latest', 'r')
+        # f = open(hpath + '/eazy-photoz/filters/FILTER.RES.latest', 'r')
+        f = open('/Users/vince.ec/git_repos/eazy-py/eazy-photoz/filters/FILTER.RES.latest', 'r')
         data = f.readlines()
         rows = []
         for i in range(len(data)):

@@ -18,23 +18,17 @@ from matplotlib import gridspec
 hpath = os.environ['HOME'] + '/'
 
 
-if hpath == '/home/vestrada78840/': # need to change
-    data_path = '/scratch/user/vestrada78840/data/'
-    chi_path = '/scratch/user/vestrada78840/chidat/'
-    beam_path = '/scratch/user/vestrada78840/beams/'
-    beam_2d_path = '/scratch/user/vestrada78840/beams/'
-    template_path = '/scratch/user/vestrada78840/data/'
-    out_path = '/scratch/user/vestrada78840/chidat/'
-    phot_path = '/scratch/user/vestrada78840/phot/'
+data_path = '../data/'
+chi_path = '../chidat/'
+beam_path = '' # path to the beam parameter files
+beam_2d_path = ''# path to the beams
+template_path = '../templates/'
+out_path = '../data/posteriors/'
 
-else:
-    data_path = '../data/'
-    chi_path = '../chidat/'
-    beam_path = '' # path to the beam parameter files
-    beam_2d_path = ''# path to the beams
-    template_path = '../templates/'
-    out_path = '../data/posteriors/'
-    phot_path = '../phot/'
+
+
+###### need to update path
+phot_path = '3dHST_photometry/'
     
     
 class Gen_spec_2D(object):
@@ -69,22 +63,44 @@ class Gen_spec_2D(object):
             self.Rwv, self.Rfl, self.Rer = self.Gen_1D_spec(self.mb_g141, g141_lims, 'G141', self.specz, mask = mask)
             self.Rwv_rf = self.Rwv/(1 + self.specz)
         
-#         self.Pwv, self.Pwv_rf, self.Pflx, self.Perr, self.Pnum = load_spec(self.field,
-#                                 self.galaxy_id, 'phot', self.g141_lims,  self.specz, grism = False, select = None)
+        self.Pwv, self.Pwv_rf, self.Pflx, self.Perr, self.Pnum = self.load_phot()
          
+        self.Pwv_ef = self.Pwv / (1 + self.specz)
+        
 #         self.Perr = apply_phot_err(self.Pflx, self.Perr, self.Pnum, base_err = phot_errterm, irac_err = irac_err)
 #         # load photmetry precalculated values
 #         self.model_photDF, self.IDP, self.sens_wv, self.trans, self.b, self.dnu, self.adj, self.mdleffwv = load_phot_precalc(self.Pnum)
        
-    def Sim_phot_premade(self, model_wave, model_flux):
-        self.Pmfl = self.Sim_phot_mult(model_wave, model_flux)
-        self.PC =  Scale_model(self.Pflx, self.Perr, self.Pmfl)
+#     def Sim_phot_premade(self, model_wave, model_flux):
+#         self.Pmfl = self.Sim_phot_mult(model_wave, model_flux)
+#         self.PC =  Scale_model(self.Pflx, self.Perr, self.Pmfl)
 
-        self.Pmfl = self.Pmfl * self.PC
+#         self.Pmfl = self.Pmfl * self.PC
      
-    def Sim_phot_mult(self, model_wave, model_flux):
-        return forward_model_phot(model_wave, model_flux, self.IDP, self.sens_wv, self.b, self.dnu, self.adj)
+#     def Sim_phot_mult(self, model_wave, model_flux):
+#         return forward_model_phot(model_wave, model_flux, self.IDP, self.sens_wv, self.b, self.dnu, self.adj)
     
+    def load_phot(self):
+        Pwv, Pflx, Perr, Pnum=np.load(phot_path + 'UDS_{}_phot.npy'.format(self.galaxy_id))
+        return Pwv[Pflx > 0], Pflx[Pflx > 0], Perr[Pflx > 0], Pnum[Pflx > 0].astype(int)
+    
+    
+    def prep_sim_phot(self):
+        self.PHOT = {}
+
+        for i, filt in enumerate(self.Pnum):
+            self.PHOT[filt] = Photometry([1],[1],[1], filt)
+            self.PHOT[filt].Get_Sensitivity(filt)
+
+    def sim_phot(self, wave, flux):
+        self.Pmwv = np.zeros_like(self.Pnum)
+        self.Pmfl = np.zeros_like(self.Pnum)
+        
+        for i, filt in enumerate(self.Pnum):
+            self.PHOT[filt].Photo_model(wave,flux)
+            self.Pmwv[i] = PHOT[filt].eff_mwv
+            self.Pmfl[i] = PHOT[filt].mphoto      
+            
     def Clean_multibeam(self):
         if int(self.galaxy_id) < 10000:
             gid = '0' + str(self.galaxy_id)
