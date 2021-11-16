@@ -22,21 +22,13 @@ zscale = 0.0035 * (1 + specz)
 
 def Full_forward_model_3(spec, wave, flux, specz, wvs, flxs, errs, beams, trans):
     Gmfl = []
-    
     for i in range(len(wvs)):
         Gmfl.append(forward_model_all_beams(beams[i], trans[i], wvs[i], wave * (1 + specz), flux))
+        
+    spec.sim_phot(wave * (1 + specz), flux)
 
-    return np.array(Gmfl)
+    return np.array(Gmfl), np.array(spec.Pmfl)
 
-def Full_fit_3(spec, Gmfl, a, b, l, wvs, flxs, errs): 
-    Gln = 0
-    
-    for i in range(len(wvs)):
-        noise = noise_model(np.array([wvs[i],flxs[i], errs[i]]).T, Gmfl[i])
-        noise.GP_exp_squared(a[i],b[i],l[i])
-        Gln += noise.gp.lnlikelihood(noise.diff)
-    
-    return Gln
 
 def Galfit_prior(u):
     m = Gaussian_prior(u[0], [0.002,0.03], 0.019, 0.08)/ 0.019
@@ -78,13 +70,12 @@ def Galfit_L(X):
     
     wave, flux = sp.get_spectrum(tage = a, peraa = True)
 
-    Gmfl= Full_forward_model_3(Gs, wave, F_lam_per_M(flux,wave*(1+z),z,0,sp.stellar_mass)*10**lm, z, 
+    Gmfl, Pmfl = Full_forward_model(Gs, wave, F_lam_per_M(flux,wave*(1+z),z,0,sp.stellar_mass)*10**lm, z, 
                                     wvs, flxs, errs, beams, trans)
-
+       
     Gmfl = Full_calibrate_2(Gmfl, [bp1, rp1], wvs, flxs, errs)
-
-    return Full_fit_3(Gs, Gmfl, [ba,ra], [bb,rb], [bl, rl], wvs, flxs, errs)
-
+   
+    return Full_fit_2(Gs, Gmfl, Pmfl, [ba,ra], [bb,rb], [bl, rl], wvs, flxs, errs)
 
 #########define fsps#########
 sp = fsps.StellarPopulation(zcontinuous = 1, logzsol = 0, sfh = 3, dust_type = 1)
